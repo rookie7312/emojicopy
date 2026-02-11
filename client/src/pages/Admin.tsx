@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft, Loader2, CheckCircle, XCircle, Zap, Pencil, Eye, Save, X } from "lucide-react";
+import { ArrowLeft, Loader2, CheckCircle, XCircle, Zap, Pencil, Eye, Save, X, FileText, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,14 +12,18 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { EmojiPage } from "@shared/schema";
 
+type Tab = "generator" | "pages";
+
 export default function Admin() {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<Tab>("generator");
   const [generatedCount, setGeneratedCount] = useState(0);
   const [isRunningBulk, setIsRunningBulk] = useState(false);
   const [editingPage, setEditingPage] = useState<EmojiPage | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editMeta, setEditMeta] = useState("");
   const [editContent, setEditContent] = useState("");
+  const [searchFilter, setSearchFilter] = useState("");
 
   const { data: pages = [] } = useQuery<EmojiPage[]>({
     queryKey: ["/api/pages"],
@@ -94,6 +98,14 @@ export default function Admin() {
 
   const generatedPages = pages.filter(p => p.isGenerated);
   const ungeneratedPages = pages.filter(p => !p.isGenerated);
+
+  const filteredGenerated = searchFilter
+    ? generatedPages.filter(p =>
+        p.title.toLowerCase().includes(searchFilter.toLowerCase()) ||
+        p.keyword.toLowerCase().includes(searchFilter.toLowerCase()) ||
+        p.slug.toLowerCase().includes(searchFilter.toLowerCase())
+      )
+    : generatedPages;
 
   if (editingPage) {
     return (
@@ -181,123 +193,194 @@ export default function Admin() {
               <ArrowLeft className="w-4 h-4" />
             </Button>
           </Link>
-          <h1 className="text-lg font-bold" data-testid="text-admin-title">Admin - SEO Page Generator</h1>
+          <h1 className="text-lg font-bold" data-testid="text-admin-title">Admin</h1>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <Card className="p-6 mb-8">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <h2 className="text-xl font-semibold mb-1" data-testid="text-stats-title">Page Statistics</h2>
-              <p className="text-muted-foreground text-sm">
-                {generatedPages.length} generated / {pages.length} total pages
-              </p>
-            </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <Badge variant="secondary" data-testid="badge-pending">
-                {ungeneratedPages.length} pending
-              </Badge>
-              <Badge data-testid="badge-done">
-                {generatedPages.length} done
-              </Badge>
-            </div>
-          </div>
-
-          <div className="w-full bg-muted rounded-full h-2 mt-4 mb-6">
-            <div
-              className="bg-primary h-2 rounded-full transition-all"
-              style={{ width: `${pages.length > 0 ? (generatedPages.length / pages.length) * 100 : 0}%` }}
-              data-testid="progress-bar"
-            />
-          </div>
-
-          <Button
-            onClick={handleBulkGenerate}
-            disabled={isRunningBulk || ungeneratedPages.length === 0}
-            className="w-full"
-            data-testid="button-bulk-generate"
+      <div className="border-b border-border">
+        <div className="max-w-4xl mx-auto px-4 flex gap-0">
+          <button
+            onClick={() => setActiveTab("generator")}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "generator"
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+            data-testid="tab-generator"
           >
-            {isRunningBulk ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                Generating... ({generatedCount} done so far)
-              </>
-            ) : ungeneratedPages.length === 0 ? (
-              <>
-                <CheckCircle className="w-4 h-4 mr-2" />
-                All pages generated
-              </>
-            ) : (
-              <>
-                <Zap className="w-4 h-4 mr-2" />
-                Generate All ({ungeneratedPages.length} remaining)
-              </>
+            <Settings className="w-4 h-4" />
+            Generator
+          </button>
+          <button
+            onClick={() => setActiveTab("pages")}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "pages"
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+            data-testid="tab-pages"
+          >
+            <FileText className="w-4 h-4" />
+            Generated Pages
+            {generatedPages.length > 0 && (
+              <Badge variant="secondary" className="ml-1">{generatedPages.length}</Badge>
             )}
-          </Button>
-        </Card>
+          </button>
+        </div>
+      </div>
 
-        {ungeneratedPages.length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-lg font-semibold mb-4" data-testid="text-pending-title">
-              Pending Pages ({ungeneratedPages.length})
-            </h2>
-            <div className="grid gap-2">
-              {ungeneratedPages.map(page => (
-                <Card key={page.id} className="p-3 flex items-center justify-between gap-3 flex-wrap">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <XCircle className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <span className="text-sm truncate" data-testid={`text-page-keyword-${page.id}`}>
-                      {page.keyword}
-                    </span>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => generateMutation.mutate(page.keyword)}
-                    disabled={generateMutation.isPending}
-                    data-testid={`button-generate-${page.id}`}
-                  >
-                    {generateMutation.isPending ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      "Generate"
-                    )}
-                  </Button>
-                </Card>
-              ))}
-            </div>
-          </section>
+      <main className="max-w-4xl mx-auto px-4 py-8">
+        {activeTab === "generator" && (
+          <>
+            <Card className="p-6 mb-8">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <h2 className="text-xl font-semibold mb-1" data-testid="text-stats-title">Page Statistics</h2>
+                  <p className="text-muted-foreground text-sm">
+                    {generatedPages.length} generated / {pages.length} total pages
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <Badge variant="secondary" data-testid="badge-pending">
+                    {ungeneratedPages.length} pending
+                  </Badge>
+                  <Badge data-testid="badge-done">
+                    {generatedPages.length} done
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="w-full bg-muted rounded-full h-2 mt-4 mb-6">
+                <div
+                  className="bg-primary h-2 rounded-full transition-all"
+                  style={{ width: `${pages.length > 0 ? (generatedPages.length / pages.length) * 100 : 0}%` }}
+                  data-testid="progress-bar"
+                />
+              </div>
+
+              <Button
+                onClick={handleBulkGenerate}
+                disabled={isRunningBulk || ungeneratedPages.length === 0}
+                className="w-full"
+                data-testid="button-bulk-generate"
+              >
+                {isRunningBulk ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Generating... ({generatedCount} done so far)
+                  </>
+                ) : ungeneratedPages.length === 0 ? (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    All pages generated
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Generate All ({ungeneratedPages.length} remaining)
+                  </>
+                )}
+              </Button>
+            </Card>
+
+            {ungeneratedPages.length > 0 && (
+              <section className="mb-8">
+                <h2 className="text-lg font-semibold mb-4" data-testid="text-pending-title">
+                  Pending Pages ({ungeneratedPages.length})
+                </h2>
+                <div className="grid gap-2">
+                  {ungeneratedPages.map(page => (
+                    <Card key={page.id} className="p-3 flex items-center justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <XCircle className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm truncate" data-testid={`text-page-keyword-${page.id}`}>
+                          {page.keyword}
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => generateMutation.mutate(page.keyword)}
+                        disabled={generateMutation.isPending}
+                        data-testid={`button-generate-${page.id}`}
+                      >
+                        {generateMutation.isPending ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          "Generate"
+                        )}
+                      </Button>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
         )}
 
-        <section>
-          <h2 className="text-lg font-semibold mb-4" data-testid="text-generated-title">
-            Generated Pages ({generatedPages.length})
-          </h2>
-          <div className="grid gap-2">
-            {generatedPages.map(page => (
-              <Card key={page.id} className="p-3 flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-2 min-w-0">
-                  <CheckCircle className="w-4 h-4 text-primary shrink-0" />
-                  <span className="text-sm truncate" data-testid={`text-generated-page-${page.id}`}>
-                    {page.title}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Link href={`/page/${page.slug}`}>
-                    <Button size="sm" variant="ghost" data-testid={`button-view-${page.id}`}>
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                  </Link>
-                  <Button size="sm" variant="outline" onClick={() => openEditor(page)} data-testid={`button-edit-${page.id}`}>
-                    <Pencil className="w-4 h-4 mr-1" />
-                    Edit
+        {activeTab === "pages" && (
+          <>
+            <div className="mb-6">
+              <Input
+                placeholder="Search generated pages..."
+                value={searchFilter}
+                onChange={e => setSearchFilter(e.target.value)}
+                data-testid="input-search-pages"
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                Showing {filteredGenerated.length} of {generatedPages.length} generated pages
+              </p>
+            </div>
+
+            {filteredGenerated.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground mb-2" data-testid="text-no-pages">
+                  {generatedPages.length === 0
+                    ? "No pages generated yet. Go to the Generator tab and click Generate All."
+                    : "No pages match your search."}
+                </p>
+                {generatedPages.length === 0 && (
+                  <Button variant="outline" onClick={() => setActiveTab("generator")} data-testid="button-go-generator">
+                    Go to Generator
                   </Button>
-                </div>
+                )}
               </Card>
-            ))}
-          </div>
-        </section>
+            ) : (
+              <div className="grid gap-2">
+                {filteredGenerated.map(page => (
+                  <Card key={page.id} className="p-4">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-medium truncate" data-testid={`text-page-title-${page.id}`}>
+                          {page.title}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-1 truncate" data-testid={`text-page-meta-${page.id}`}>
+                          {page.metaDescription}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                          <Badge variant="secondary">{page.keyword}</Badge>
+                          <span className="text-xs text-muted-foreground">/page/{page.slug}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Link href={`/page/${page.slug}`}>
+                          <Button size="sm" variant="ghost" data-testid={`button-view-${page.id}`}>
+                            <Eye className="w-4 h-4 mr-1" />
+                            View
+                          </Button>
+                        </Link>
+                        <Button size="sm" variant="outline" onClick={() => openEditor(page)} data-testid={`button-edit-${page.id}`}>
+                          <Pencil className="w-4 h-4 mr-1" />
+                          Edit
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </main>
     </div>
   );

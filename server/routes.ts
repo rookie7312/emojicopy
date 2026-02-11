@@ -158,12 +158,32 @@ ${relatedEmojis.slice(0, 10).map(e => `- ${e.emoji} **${e.name}** - ${e.descript
 
 Using ${keyword}s is easy! Just click on any emoji above and it will be copied to your clipboard. Then paste it anywhere - in text messages, social media posts, emails, or documents.
 
-### Where to Use ${title}
+### How to Use ${title} on iPhone
 
-- **Text Messages**: Add expression to your iMessage, WhatsApp, or Telegram chats
-- **Social Media**: Make your Instagram, Twitter/X, Facebook, and TikTok posts stand out
-- **Email**: Add a personal touch to casual emails
-- **Documents**: Use in Google Docs, Microsoft Word, and other editors
+1. Visit this page on your iPhone's Safari or Chrome browser
+2. Tap the ${keyword} you want to copy
+3. The emoji is now copied to your clipboard
+4. Open any app like iMessage, WhatsApp, Instagram, or Notes
+5. Tap and hold the text field and select **Paste**
+6. You can also access emojis through your iPhone keyboard by tapping the smiley face icon
+
+### How to Use ${title} on Android
+
+1. Open this page in Chrome or any browser on your Android phone
+2. Tap the ${keyword} you want to use
+3. It will be copied to your clipboard automatically
+4. Switch to any app like Messages, WhatsApp, Telegram, or Facebook
+5. Long press in the text field and tap **Paste**
+6. Android users can also find emojis by tapping the emoji icon on the Gboard keyboard
+
+### How to Use ${title} on PC (Windows & Mac)
+
+1. Open this page on your computer browser (Chrome, Firefox, Edge, or Safari)
+2. Click on the ${keyword} you want to copy
+3. The emoji is instantly copied to your clipboard
+4. Open any app or website where you want to paste it
+5. Press **Ctrl+V** (Windows) or **Cmd+V** (Mac) to paste
+6. On Windows, you can also press **Win + .** (period) to open the emoji picker. On Mac, press **Ctrl + Cmd + Space**
 
 ## About ${title}
 
@@ -178,7 +198,13 @@ Simply click on the emoji and it will be automatically copied to your clipboard.
 Yes! Emojis are universal and work on all modern devices including iPhone, Android, Windows, and Mac computers.
 
 ### What does the ${keyword} mean?
-The ${keyword} is commonly used to express feelings related to ${cleanKeyword}. Its meaning can vary slightly depending on context and culture.`;
+The ${keyword} is commonly used to express feelings related to ${cleanKeyword}. Its meaning can vary slightly depending on context and culture.
+
+### Do ${keyword}s look the same on iPhone and Android?
+${title}s may look slightly different on iPhone (Apple) vs Android (Google) devices. Each platform has its own emoji design style, but the meaning stays the same.
+
+### Can I use ${keyword}s in emails?
+Yes! You can paste ${keyword}s into any email client including Gmail, Outlook, Yahoo Mail, and Apple Mail. They work in both the subject line and the body of the email.`;
 }
 
 async function seedDatabase() {
